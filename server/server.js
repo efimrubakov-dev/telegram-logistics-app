@@ -545,6 +545,8 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
+  console.log('🏥 Health check запрос получен');
+  console.log('📋 Headers:', req.headers);
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

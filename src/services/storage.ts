@@ -118,14 +118,39 @@ export const ordersStorage = {
     if (useAPI) {
       try {
         console.log('📥 Загрузка заказов с API...');
-        const result = await ordersAPI.getAll();
-        console.log('✅ Заказы загружены с API:', result?.length || 0);
-        return result;
+        // Добавляем timeout для запроса
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 секунд
+        
+        // Пока не можем передать signal в request, просто делаем обычный запрос
+        // но обрабатываем timeout через Promise.race
+        const fetchPromise = ordersAPI.getAll();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout')), 8000);
+        });
+        
+        try {
+          const result = await Promise.race([fetchPromise, timeoutPromise]) as any[];
+          clearTimeout(timeoutId);
+          console.log('✅ Заказы загружены с API:', result?.length || 0);
+          return result;
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          if (fetchError.message === 'Timeout' || fetchError.name === 'AbortError') {
+            console.warn('⏱️ Timeout при загрузке заказов - это нормально, сервер может быть спящим');
+            // Не сбрасываем useAPI при timeout - это временная проблема
+            // Возвращаем пустой массив вместо ошибки
+            return [];
+          }
+          throw fetchError;
+        }
       } catch (error: any) {
         console.error('❌ Ошибка при загрузке заказов с API:', error);
+        console.error('Тип ошибки:', error?.name);
+        console.error('Сообщение:', error?.message);
         // Не сбрасываем useAPI при ошибке чтения - это может быть временная проблема
-        // Выбрасываем ошибку, чтобы компонент мог обработать её
-        throw error;
+        // Возвращаем пустой массив вместо ошибки, чтобы не блокировать UI
+        return [];
       }
     }
     console.log('📥 Загрузка заказов из localStorage');

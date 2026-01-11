@@ -38,9 +38,31 @@ function App() {
       tg.ready();
       tg.expand();
       
-      // Устанавливаем цвет фона через Telegram API
-      const bgColor = tg.themeParams?.bg_color || '#ffffff';
-      const textColor = tg.themeParams?.text_color || '#000000';
+      // Получаем цвета из Telegram темы
+      let bgColor = tg.themeParams?.bg_color || '#ffffff';
+      let textColor = tg.themeParams?.text_color || '#000000';
+      
+      // Если цвет фона слишком темный (темная тема), используем светлую тему
+      // Проверяем яркость цвета
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      };
+      
+      const rgb = hexToRgb(bgColor);
+      if (rgb) {
+        // Вычисляем яркость (luminance)
+        const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+        // Если фон слишком темный, используем светлую тему
+        if (luminance < 0.5) {
+          bgColor = '#ffffff';
+          textColor = '#000000';
+        }
+      }
       
       // Используем Telegram API для установки фона (важно для мобильных устройств)
       if (tg.setBackgroundColor) {
@@ -60,6 +82,7 @@ function App() {
       const root = document.getElementById('root');
       if (root) {
         root.style.backgroundColor = bgColor;
+        root.style.color = textColor;
       }
       
       // Получаем username из Telegram
@@ -69,12 +92,15 @@ function App() {
       }
     } else {
       // Если не в Telegram, устанавливаем дефолтные значения
-      document.body.style.backgroundColor = '#ffffff';
-      document.body.style.color = '#000000';
-      document.documentElement.style.backgroundColor = '#ffffff';
+      const defaultBg = '#ffffff';
+      const defaultText = '#000000';
+      document.body.style.backgroundColor = defaultBg;
+      document.body.style.color = defaultText;
+      document.documentElement.style.backgroundColor = defaultBg;
       const root = document.getElementById('root');
       if (root) {
-        root.style.backgroundColor = '#ffffff';
+        root.style.backgroundColor = defaultBg;
+        root.style.color = defaultText;
       }
     }
   }, []);

@@ -131,9 +131,12 @@ function CreateOrderScreen({ onNavigate }: CreateOrderScreenProps) {
       }
       
       onNavigate('orders');
-    } catch (error) {
-      console.error('Ошибка сохранения заказа:', error);
-      alert('Ошибка при сохранении заказа. Попробуйте еще раз.');
+    } catch (error: any) {
+      console.error('❌ Ошибка сохранения заказа в CreateOrderScreen:', error);
+      console.error('Тип ошибки:', error?.name);
+      console.error('Сообщение:', error?.message);
+      console.error('Stack:', error?.stack);
+      alert(`Ошибка при сохранении заказа: ${error?.message || 'Неизвестная ошибка'}. Попробуйте еще раз.`);
     }
   };
 

@@ -139,7 +139,11 @@ export const ordersStorage = {
   },
 
   async create(data: any) {
-    await checkAPI();
+    console.log('🔄 ordersStorage.create вызван');
+    const apiAvailable = await checkAPI();
+    console.log('🔍 useAPI после checkAPI:', useAPI);
+    console.log('🔍 apiAvailable:', apiAvailable);
+    
     if (useAPI) {
       try {
         console.log('📤 Отправка заказа на API:', data);
@@ -148,12 +152,14 @@ export const ordersStorage = {
         return result;
       } catch (error: any) {
         console.error('❌ Ошибка при создании заказа в API:', error);
-        console.error('Детали ошибки:', error.message);
+        console.error('Тип ошибки:', error?.name);
+        console.error('Сообщение ошибки:', error?.message);
+        console.error('Stack:', error?.stack);
         // Не переключаемся на localStorage, выбрасываем ошибку
         throw error;
       }
     }
-    console.warn('⚠️ API недоступен, сохраняем в localStorage');
+    console.warn('⚠️ API недоступен (useAPI = false), сохраняем в localStorage');
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     const newOrder = {
       ...data,

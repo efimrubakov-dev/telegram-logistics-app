@@ -333,6 +333,14 @@ app.post('/api/orders', getUserFromRequest, async (req, res) => {
       photo_report, status, status_date, track_number
     } = req.body;
     
+    console.log('🔄 Начинаем вставку в БД...');
+    console.log('📊 Данные для вставки:', {
+      user_id: req.user.id,
+      product_name,
+      price,
+      quantity: quantity || 1
+    });
+    
     const result = await dbRun(`
       INSERT INTO orders (
         user_id, product_name, link, price, quantity, photo, warehouse_photo, comment,
@@ -346,10 +354,11 @@ app.post('/api/orders', getUserFromRequest, async (req, res) => {
       status || 'Ожидается на складе', status_date, track_number || `CN${Date.now()}`
     ]);
     
+    console.log('✅ Результат dbRun:', JSON.stringify(result, null, 2));
     console.log('✅ Заказ создан в БД, ID:', result.lastID);
     
     const order = await dbGet('SELECT * FROM orders WHERE id = ?', [result.lastID]);
-    console.log('📋 Созданный заказ:', order);
+    console.log('📋 Созданный заказ:', JSON.stringify(order, null, 2));
     
     res.status(201).json({
       ...order,

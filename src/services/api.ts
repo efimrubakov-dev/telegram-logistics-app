@@ -1,8 +1,7 @@
 // API сервис для работы с backend
 
-// URL вашего Render сервиса (замените на ваш реальный URL после деплоя)
-// Пример: https://telegram-logistics-api.onrender.com/api
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://your-app-name.onrender.com/api';
+// URL вашего Render сервиса
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://telegram-logistics-app.onrender.com/api';
 
 // Получаем данные пользователя из Telegram
 function getTelegramUser() {

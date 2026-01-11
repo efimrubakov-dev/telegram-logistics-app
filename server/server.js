@@ -444,7 +444,11 @@ app.delete('/api/consolidations/:id', getUserFromRequest, (req, res) => {
   res.json({ success: true });
 });
 
-// Health check
+// Health check (добавляем также без префикса для проверки)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

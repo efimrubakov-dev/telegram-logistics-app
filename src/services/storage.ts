@@ -117,11 +117,18 @@ export const ordersStorage = {
     await checkAPI();
     if (useAPI) {
       try {
-        return await ordersAPI.getAll();
-      } catch (error) {
-        useAPI = false;
+        console.log('📥 Загрузка заказов с API...');
+        const result = await ordersAPI.getAll();
+        console.log('✅ Заказы загружены с API:', result?.length || 0);
+        return result;
+      } catch (error: any) {
+        console.error('❌ Ошибка при загрузке заказов с API:', error);
+        // Не сбрасываем useAPI при ошибке чтения - это может быть временная проблема
+        // Выбрасываем ошибку, чтобы компонент мог обработать её
+        throw error;
       }
     }
+    console.log('📥 Загрузка заказов из localStorage');
     return JSON.parse(localStorage.getItem('orders') || '[]');
   },
 
@@ -130,8 +137,10 @@ export const ordersStorage = {
     if (useAPI) {
       try {
         return await ordersAPI.getById(id);
-      } catch (error) {
-        useAPI = false;
+      } catch (error: any) {
+        console.error('❌ Ошибка при получении заказа с API:', error);
+        // Не сбрасываем useAPI при ошибке чтения
+        throw error;
       }
     }
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');

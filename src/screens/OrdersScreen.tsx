@@ -49,8 +49,11 @@ function OrdersScreen({ onNavigate }: OrdersScreenProps) {
         statusDate: order.status_date || order.statusDate
       }));
       setOrders(formattedOrders);
-    } catch (error) {
-      console.error('Ошибка загрузки заказов:', error);
+    } catch (error: any) {
+      console.error('❌ Ошибка загрузки заказов:', error);
+      console.error('Тип ошибки:', error?.name);
+      console.error('Сообщение:', error?.message);
+      // При ошибке загрузки показываем пустой список, но не сбрасываем useAPI
       setOrders([]);
     }
   };

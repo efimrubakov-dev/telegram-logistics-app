@@ -55,11 +55,16 @@ export const recipientsStorage = {
     await checkAPI();
     if (useAPI) {
       try {
-        return await recipientsAPI.create(data);
-      } catch (error) {
-        useAPI = false;
+        console.log('📤 Отправка получателя на API:', data);
+        const result = await recipientsAPI.create(data);
+        console.log('✅ Получатель успешно создан в API:', result);
+        return result;
+      } catch (error: any) {
+        console.error('❌ Ошибка при создании получателя в API:', error);
+        throw error;
       }
     }
+    console.warn('⚠️ API недоступен, сохраняем в localStorage');
     const recipients = JSON.parse(localStorage.getItem('recipients') || '[]');
     const newRecipient = {
       ...data,

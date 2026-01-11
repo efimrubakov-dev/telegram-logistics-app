@@ -173,185 +173,217 @@ app.get('/api/recipients', getUserFromRequest, async (req, res) => {
   }
 });
 
-app.get('/api/recipients/:id', getUserFromRequest, (req, res) => {
-  const recipient = db.prepare('SELECT * FROM recipients WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!recipient) {
-    return res.status(404).json({ error: 'Получатель не найден' });
+app.get('/api/recipients/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const recipient = await dbGet('SELECT * FROM recipients WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (!recipient) {
+      return res.status(404).json({ error: 'Получатель не найден' });
+    }
+    res.json(recipient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json(recipient);
 });
 
-app.post('/api/recipients', getUserFromRequest, (req, res) => {
-  const {
-    name, first_name, last_name, middle_name, email, phone,
-    birth_date, passport_series, passport_number, passport_issue_date, inn
-  } = req.body;
-  
-  const insert = db.prepare(`
-    INSERT INTO recipients (
-      user_id, name, first_name, last_name, middle_name, email, phone,
+app.post('/api/recipients', getUserFromRequest, async (req, res) => {
+  try {
+    const {
+      name, first_name, last_name, middle_name, email, phone,
       birth_date, passport_series, passport_number, passport_issue_date, inn
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
-  const result = insert.run(
-    req.user.id, name, first_name, last_name, middle_name, email, phone,
-    birth_date, passport_series, passport_number, passport_issue_date, inn
-  );
-  
-  const recipient = db.prepare('SELECT * FROM recipients WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(recipient);
+    } = req.body;
+    
+    const result = await dbRun(`
+      INSERT INTO recipients (
+        user_id, name, first_name, last_name, middle_name, email, phone,
+        birth_date, passport_series, passport_number, passport_issue_date, inn
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      req.user.id, name, first_name, last_name, middle_name, email, phone,
+      birth_date, passport_series, passport_number, passport_issue_date, inn
+    ]);
+    
+    const recipient = await dbGet('SELECT * FROM recipients WHERE id = ?', [result.lastID]);
+    res.status(201).json(recipient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.put('/api/recipients/:id', getUserFromRequest, (req, res) => {
-  const {
-    name, first_name, last_name, middle_name, email, phone,
-    birth_date, passport_series, passport_number, passport_issue_date, inn
-  } = req.body;
-  
-  const update = db.prepare(`
-    UPDATE recipients SET
-      name = ?, first_name = ?, last_name = ?, middle_name = ?, email = ?, phone = ?,
-      birth_date = ?, passport_series = ?, passport_number = ?, passport_issue_date = ?, inn = ?
-    WHERE id = ? AND user_id = ?
-  `);
-  
-  const result = update.run(
-    name, first_name, last_name, middle_name, email, phone,
-    birth_date, passport_series, passport_number, passport_issue_date, inn,
-    req.params.id, req.user.id
-  );
-  
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Получатель не найден' });
+app.put('/api/recipients/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const {
+      name, first_name, last_name, middle_name, email, phone,
+      birth_date, passport_series, passport_number, passport_issue_date, inn
+    } = req.body;
+    
+    const result = await dbRun(`
+      UPDATE recipients SET
+        name = ?, first_name = ?, last_name = ?, middle_name = ?, email = ?, phone = ?,
+        birth_date = ?, passport_series = ?, passport_number = ?, passport_issue_date = ?, inn = ?
+      WHERE id = ? AND user_id = ?
+    `, [
+      name, first_name, last_name, middle_name, email, phone,
+      birth_date, passport_series, passport_number, passport_issue_date, inn,
+      req.params.id, req.user.id
+    ]);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Получатель не найден' });
+    }
+    
+    const recipient = await dbGet('SELECT * FROM recipients WHERE id = ?', [req.params.id]);
+    res.json(recipient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  
-  const recipient = db.prepare('SELECT * FROM recipients WHERE id = ?').get(req.params.id);
-  res.json(recipient);
 });
 
-app.delete('/api/recipients/:id', getUserFromRequest, (req, res) => {
-  const result = db.prepare('DELETE FROM recipients WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Получатель не найден' });
+app.delete('/api/recipients/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const result = await dbRun('DELETE FROM recipients WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Получатель не найден' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json({ success: true });
 });
 
 // ==================== ORDERS ====================
-app.get('/api/orders', getUserFromRequest, (req, res) => {
-  const orders = db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
-  // Преобразуем boolean значения
-  const formattedOrders = orders.map(order => ({
-    ...order,
-    consolidation: Boolean(order.consolidation),
-    remove_postal_packaging: Boolean(order.remove_postal_packaging),
-    remove_original_packaging: Boolean(order.remove_original_packaging),
-    photo_report: Boolean(order.photo_report)
-  }));
-  res.json(formattedOrders);
-});
-
-app.get('/api/orders/:id', getUserFromRequest, (req, res) => {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!order) {
-    return res.status(404).json({ error: 'Заказ не найден' });
+app.get('/api/orders', getUserFromRequest, async (req, res) => {
+  try {
+    const orders = await dbAll('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
+    // Преобразуем boolean значения
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      consolidation: Boolean(order.consolidation),
+      remove_postal_packaging: Boolean(order.remove_postal_packaging),
+      remove_original_packaging: Boolean(order.remove_original_packaging),
+      photo_report: Boolean(order.photo_report)
+    }));
+    res.json(formattedOrders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json({
-    ...order,
-    consolidation: Boolean(order.consolidation),
-    remove_postal_packaging: Boolean(order.remove_postal_packaging),
-    remove_original_packaging: Boolean(order.remove_original_packaging),
-    photo_report: Boolean(order.photo_report)
-  });
 });
 
-app.post('/api/orders', getUserFromRequest, (req, res) => {
-  const {
-    product_name, link, price, quantity, photo, warehouse_photo, comment,
-    check_service, consolidation, remove_postal_packaging, remove_original_packaging,
-    photo_report, status, status_date, track_number
-  } = req.body;
-  
-  const insert = db.prepare(`
-    INSERT INTO orders (
-      user_id, product_name, link, price, quantity, photo, warehouse_photo, comment,
+app.get('/api/orders/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const order = await dbGet('SELECT * FROM orders WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (!order) {
+      return res.status(404).json({ error: 'Заказ не найден' });
+    }
+    res.json({
+      ...order,
+      consolidation: Boolean(order.consolidation),
+      remove_postal_packaging: Boolean(order.remove_postal_packaging),
+      remove_original_packaging: Boolean(order.remove_original_packaging),
+      photo_report: Boolean(order.photo_report)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/orders', getUserFromRequest, async (req, res) => {
+  try {
+    const {
+      product_name, link, price, quantity, photo, warehouse_photo, comment,
       check_service, consolidation, remove_postal_packaging, remove_original_packaging,
       photo_report, status, status_date, track_number
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
-  const result = insert.run(
-    req.user.id, product_name, link, price, quantity || 1, photo, warehouse_photo, comment,
-    check_service, consolidation ? 1 : 0, remove_postal_packaging ? 1 : 0,
-    remove_original_packaging ? 1 : 0, photo_report ? 1 : 0,
-    status || 'Ожидается на складе', status_date, track_number || `CN${Date.now()}`
-  );
-  
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json({
-    ...order,
-    consolidation: Boolean(order.consolidation),
-    remove_postal_packaging: Boolean(order.remove_postal_packaging),
-    remove_original_packaging: Boolean(order.remove_original_packaging),
-    photo_report: Boolean(order.photo_report)
-  });
+    } = req.body;
+    
+    const result = await dbRun(`
+      INSERT INTO orders (
+        user_id, product_name, link, price, quantity, photo, warehouse_photo, comment,
+        check_service, consolidation, remove_postal_packaging, remove_original_packaging,
+        photo_report, status, status_date, track_number
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      req.user.id, product_name, link, price, quantity || 1, photo, warehouse_photo, comment,
+      check_service, consolidation ? 1 : 0, remove_postal_packaging ? 1 : 0,
+      remove_original_packaging ? 1 : 0, photo_report ? 1 : 0,
+      status || 'Ожидается на складе', status_date, track_number || `CN${Date.now()}`
+    ]);
+    
+    const order = await dbGet('SELECT * FROM orders WHERE id = ?', [result.lastID]);
+    res.status(201).json({
+      ...order,
+      consolidation: Boolean(order.consolidation),
+      remove_postal_packaging: Boolean(order.remove_postal_packaging),
+      remove_original_packaging: Boolean(order.remove_original_packaging),
+      photo_report: Boolean(order.photo_report)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.put('/api/orders/:id', getUserFromRequest, (req, res) => {
-  const {
-    product_name, link, price, quantity, photo, warehouse_photo, comment,
-    check_service, consolidation, remove_postal_packaging, remove_original_packaging,
-    photo_report, status, status_date, track_number
-  } = req.body;
-  
-  const update = db.prepare(`
-    UPDATE orders SET
-      product_name = ?, link = ?, price = ?, quantity = ?, photo = ?, warehouse_photo = ?, comment = ?,
-      check_service = ?, consolidation = ?, remove_postal_packaging = ?, remove_original_packaging = ?,
-      photo_report = ?, status = ?, status_date = ?, track_number = ?
-    WHERE id = ? AND user_id = ?
-  `);
-  
-  const result = update.run(
-    product_name, link, price, quantity, photo, warehouse_photo, comment,
-    check_service, consolidation ? 1 : 0, remove_postal_packaging ? 1 : 0,
-    remove_original_packaging ? 1 : 0, photo_report ? 1 : 0,
-    status, status_date, track_number,
-    req.params.id, req.user.id
-  );
-  
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Заказ не найден' });
+app.put('/api/orders/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const {
+      product_name, link, price, quantity, photo, warehouse_photo, comment,
+      check_service, consolidation, remove_postal_packaging, remove_original_packaging,
+      photo_report, status, status_date, track_number
+    } = req.body;
+    
+    const result = await dbRun(`
+      UPDATE orders SET
+        product_name = ?, link = ?, price = ?, quantity = ?, photo = ?, warehouse_photo = ?, comment = ?,
+        check_service = ?, consolidation = ?, remove_postal_packaging = ?, remove_original_packaging = ?,
+        photo_report = ?, status = ?, status_date = ?, track_number = ?
+      WHERE id = ? AND user_id = ?
+    `, [
+      product_name, link, price, quantity, photo, warehouse_photo, comment,
+      check_service, consolidation ? 1 : 0, remove_postal_packaging ? 1 : 0,
+      remove_original_packaging ? 1 : 0, photo_report ? 1 : 0,
+      status, status_date, track_number,
+      req.params.id, req.user.id
+    ]);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Заказ не найден' });
+    }
+    
+    const order = await dbGet('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+    res.json({
+      ...order,
+      consolidation: Boolean(order.consolidation),
+      remove_postal_packaging: Boolean(order.remove_postal_packaging),
+      remove_original_packaging: Boolean(order.remove_original_packaging),
+      photo_report: Boolean(order.photo_report)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-  res.json({
-    ...order,
-    consolidation: Boolean(order.consolidation),
-    remove_postal_packaging: Boolean(order.remove_postal_packaging),
-    remove_original_packaging: Boolean(order.remove_original_packaging),
-    photo_report: Boolean(order.photo_report)
-  });
 });
 
-app.delete('/api/orders/:id', getUserFromRequest, (req, res) => {
-  const result = db.prepare('DELETE FROM orders WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Заказ не найден' });
+app.delete('/api/orders/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const result = await dbRun('DELETE FROM orders WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Заказ не найден' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json({ success: true });
 });
 
-app.delete('/api/orders', getUserFromRequest, (req, res) => {
-  const { ids } = req.body;
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return res.status(400).json({ error: 'Необходимо передать массив ID' });
+app.delete('/api/orders', getUserFromRequest, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Необходимо передать массив ID' });
+    }
+    
+    const placeholders = ids.map(() => '?').join(',');
+    const result = await dbRun(`DELETE FROM orders WHERE id IN (${placeholders}) AND user_id = ?`, [...ids, req.user.id]);
+    res.json({ success: true, deleted: result.changes });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  
-  const placeholders = ids.map(() => '?').join(',');
-  const result = db.prepare(`DELETE FROM orders WHERE id IN (${placeholders}) AND user_id = ?`).run(...ids, req.user.id);
-  res.json({ success: true, deleted: result.changes });
 });
 
 // ==================== DELIVERY ADDRESSES ====================

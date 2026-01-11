@@ -470,6 +470,93 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Админ-роуты для просмотра данных (простой способ без аутентификации)
+// ВНИМАНИЕ: В продакшене добавьте защиту!
+app.get('/admin/stats', async (req, res) => {
+  try {
+    const users = await dbGet('SELECT COUNT(*) as count FROM users');
+    const recipients = await dbGet('SELECT COUNT(*) as count FROM recipients');
+    const orders = await dbGet('SELECT COUNT(*) as count FROM orders');
+    const consolidations = await dbGet('SELECT COUNT(*) as count FROM consolidations');
+    const deliveryAddresses = await dbGet('SELECT COUNT(*) as count FROM delivery_addresses');
+    
+    res.json({
+      users: users.count,
+      recipients: recipients.count,
+      orders: orders.count,
+      consolidations: consolidations.count,
+      deliveryAddresses: deliveryAddresses.count
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/users', async (req, res) => {
+  try {
+    const users = await dbAll('SELECT * FROM users ORDER BY created_at DESC');
+    res.json({ count: users.length, users });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/recipients', async (req, res) => {
+  try {
+    const recipients = await dbAll(`
+      SELECT r.*, u.username, u.telegram_id 
+      FROM recipients r 
+      LEFT JOIN users u ON r.user_id = u.id 
+      ORDER BY r.created_at DESC
+    `);
+    res.json({ count: recipients.length, recipients });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/orders', async (req, res) => {
+  try {
+    const orders = await dbAll(`
+      SELECT o.*, u.username, u.telegram_id 
+      FROM orders o 
+      LEFT JOIN users u ON o.user_id = u.id 
+      ORDER BY o.created_at DESC
+    `);
+    res.json({ count: orders.length, orders });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/consolidations', async (req, res) => {
+  try {
+    const consolidations = await dbAll(`
+      SELECT c.*, u.username, u.telegram_id 
+      FROM consolidations c 
+      LEFT JOIN users u ON c.user_id = u.id 
+      ORDER BY c.created_at DESC
+    `);
+    res.json({ count: consolidations.length, consolidations });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/admin/delivery-addresses', async (req, res) => {
+  try {
+    const addresses = await dbAll(`
+      SELECT d.*, u.username, u.telegram_id 
+      FROM delivery_addresses d 
+      LEFT JOIN users u ON d.user_id = u.id 
+      ORDER BY d.created_at DESC
+    `);
+    res.json({ count: addresses.length, addresses });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Обработка ошибок
 app.use((err, req, res, next) => {
   console.error('Ошибка:', err);

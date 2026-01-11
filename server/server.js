@@ -145,13 +145,22 @@ async function getOrCreateUser(telegramId, username, firstName, lastName) {
 async function getUserFromRequest(req, res, next) {
   try {
     // В реальном приложении здесь должна быть проверка подписи Telegram
+    // Декодируем значения заголовков (они могут быть закодированы через encodeURIComponent)
+    const decodeHeader = (value) => {
+      if (!value) return '';
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value; // Если декодирование не удалось, возвращаем как есть
+      }
+    };
+    
     const telegramId = req.headers['x-telegram-id'] || req.body.telegram_id || '1';
-    const username = req.headers['x-telegram-username'] || req.body.username;
-    const firstName = req.headers['x-telegram-first-name'] || req.body.first_name;
-    const lastName = req.headers['x-telegram-last-name'] || req.body.last_name;
+    const username = decodeHeader(req.headers['x-telegram-username']) || req.body.username || '';
+    const firstName = decodeHeader(req.headers['x-telegram-first-name']) || req.body.first_name || '';
+    const lastName = decodeHeader(req.headers['x-telegram-last-name']) || req.body.last_name || '';
     
     console.log('🔍 Получение пользователя:', { telegramId, username, firstName, lastName });
-    console.log('📋 Все заголовки запроса:', JSON.stringify(req.headers, null, 2));
     console.log('📋 Метод запроса:', req.method);
     console.log('📋 URL запроса:', req.url);
     

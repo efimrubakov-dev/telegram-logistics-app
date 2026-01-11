@@ -24,14 +24,22 @@ function getTelegramUser() {
 }
 
 // Создаем заголовки с данными Telegram
+// Кодируем значения заголовков в base64, чтобы избежать проблем с не-ASCII символами
 function getHeaders(): HeadersInit {
   const user = getTelegramUser();
+  // Кодируем значения, которые могут содержать не-ASCII символы
+  const encodeHeader = (value: string) => {
+    if (!value) return '';
+    // Используем encodeURIComponent для безопасной передачи
+    return encodeURIComponent(value);
+  };
+  
   return {
     'Content-Type': 'application/json',
     'x-telegram-id': user.telegram_id,
-    'x-telegram-username': user.username,
-    'x-telegram-first-name': user.first_name,
-    'x-telegram-last-name': user.last_name
+    'x-telegram-username': encodeHeader(user.username),
+    'x-telegram-first-name': encodeHeader(user.first_name),
+    'x-telegram-last-name': encodeHeader(user.last_name)
   };
 }
 

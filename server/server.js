@@ -151,14 +151,17 @@ async function getUserFromRequest(req, res, next) {
     const lastName = req.headers['x-telegram-last-name'] || req.body.last_name;
     
     console.log('🔍 Получение пользователя:', { telegramId, username, firstName, lastName });
-    console.log('📋 Заголовки запроса:', req.headers);
+    console.log('📋 Все заголовки запроса:', JSON.stringify(req.headers, null, 2));
+    console.log('📋 Метод запроса:', req.method);
+    console.log('📋 URL запроса:', req.url);
     
     const user = await getOrCreateUser(telegramId, username, firstName, lastName);
-    console.log('✅ Пользователь найден/создан:', user);
+    console.log('✅ Пользователь найден/создан:', JSON.stringify(user, null, 2));
     req.user = user;
     next();
   } catch (error) {
     console.error('❌ Ошибка в getUserFromRequest:', error);
+    console.error('Stack:', error.stack);
     next(error);
   }
 }
@@ -294,8 +297,11 @@ app.get('/api/orders/:id', getUserFromRequest, async (req, res) => {
 app.post('/api/orders', getUserFromRequest, async (req, res) => {
   try {
     console.log('📥 POST /api/orders - Получен запрос');
-    console.log('👤 Пользователь:', req.user);
-    console.log('📦 Тело запроса:', req.body);
+    console.log('📋 Метод:', req.method);
+    console.log('📋 URL:', req.url);
+    console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('👤 Пользователь:', JSON.stringify(req.user, null, 2));
+    console.log('📦 Тело запроса:', JSON.stringify(req.body, null, 2));
     
     const {
       product_name, link, price, quantity, photo, warehouse_photo, comment,

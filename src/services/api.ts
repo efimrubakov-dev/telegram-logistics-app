@@ -52,7 +52,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   };
   
   console.log(`🌐 API запрос: ${options.method || 'GET'} ${url}`);
-  console.log('📋 Заголовки:', headers);
+  // Логируем заголовки (показываем закодированные значения)
+  const headersForLog: any = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.includes('telegram') && typeof value === 'string' && value.length > 0) {
+      headersForLog[key] = `[encoded: ${value.substring(0, 20)}...]`;
+    } else {
+      headersForLog[key] = value;
+    }
+  }
+  console.log('📋 Заголовки:', headersForLog);
   if (options.body) {
     console.log('📦 Тело запроса:', options.body);
   }

@@ -22,4 +22,7 @@ body {
   min-height: 100vh;
   background-color: #ffffff;
   width: 100%;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }

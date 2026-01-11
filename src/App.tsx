@@ -33,74 +33,38 @@ function App() {
 
   // Инициализация Telegram WebApp
   useEffect(() => {
+    // Всегда устанавливаем белый фон и черный текст для надежности
+    const bgColor = '#ffffff';
+    const textColor = '#000000';
+    
+    // Применяем цвета сразу
+    document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
+    document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
+    document.body.style.backgroundColor = bgColor;
+    document.body.style.color = textColor;
+    document.documentElement.style.backgroundColor = bgColor;
+    
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.backgroundColor = bgColor;
+      root.style.color = textColor;
+    }
+    
+    // Инициализация Telegram WebApp
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
       
-      // Получаем цвета из Telegram темы
-      let bgColor = tg.themeParams?.bg_color || '#ffffff';
-      let textColor = tg.themeParams?.text_color || '#000000';
-      
-      // Если цвет фона слишком темный (темная тема), используем светлую тему
-      // Проверяем яркость цвета
-      const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : null;
-      };
-      
-      const rgb = hexToRgb(bgColor);
-      if (rgb) {
-        // Вычисляем яркость (luminance)
-        const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-        // Если фон слишком темный, используем светлую тему
-        if (luminance < 0.5) {
-          bgColor = '#ffffff';
-          textColor = '#000000';
-        }
-      }
-      
-      // Используем Telegram API для установки фона (важно для мобильных устройств)
+      // Устанавливаем белый фон через Telegram API
       if (tg.setBackgroundColor) {
-        // Убираем # из цвета для API
-        const bgColorHex = bgColor.replace('#', '');
-        tg.setBackgroundColor(bgColorHex);
-      }
-      
-      // Применяем цвета к документу
-      document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
-      document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
-      document.body.style.backgroundColor = bgColor;
-      document.body.style.color = textColor;
-      document.documentElement.style.backgroundColor = bgColor;
-      
-      // Устанавливаем фон для root элемента
-      const root = document.getElementById('root');
-      if (root) {
-        root.style.backgroundColor = bgColor;
-        root.style.color = textColor;
+        tg.setBackgroundColor('ffffff');
       }
       
       // Получаем username из Telegram
       const user = tg.initDataUnsafe?.user;
       if (user?.username) {
         setTelegramUser(user.username);
-      }
-    } else {
-      // Если не в Telegram, устанавливаем дефолтные значения
-      const defaultBg = '#ffffff';
-      const defaultText = '#000000';
-      document.body.style.backgroundColor = defaultBg;
-      document.body.style.color = defaultText;
-      document.documentElement.style.backgroundColor = defaultBg;
-      const root = document.getElementById('root');
-      if (root) {
-        root.style.backgroundColor = defaultBg;
-        root.style.color = defaultText;
       }
     }
   }, []);

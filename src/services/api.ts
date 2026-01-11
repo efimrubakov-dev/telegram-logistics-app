@@ -147,16 +147,22 @@ export const consolidationsAPI = {
 // Проверка доступности API
 export const healthCheck = async () => {
   try {
+    // API_BASE_URL уже содержит /api, поэтому просто /health
     const url = `${API_BASE_URL}/health`;
     console.log('🏥 Health check запрос:', url);
+    console.log('🏥 API_BASE_URL:', API_BASE_URL);
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      // Добавляем timeout
+      signal: AbortSignal.timeout(5000)
     });
     
     console.log('🏥 Health check ответ:', response.status, response.statusText);
+    console.log('🏥 Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -168,7 +174,17 @@ export const healthCheck = async () => {
     console.log('✅ Health check успешен:', data);
     return data;
   } catch (error: any) {
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+      console.error('❌ Health check timeout (сервер не отвечает)');
+      throw new Error('Сервер не отвечает (timeout)');
+    }
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      console.error('❌ Health check network error (CORS или сеть)');
+      throw new Error('Ошибка сети или CORS');
+    }
     console.error('❌ Health check исключение:', error);
+    console.error('Тип ошибки:', error.name);
+    console.error('Сообщение:', error.message);
     throw error;
   }
 };

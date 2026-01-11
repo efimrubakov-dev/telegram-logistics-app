@@ -38,20 +38,39 @@ function getHeaders(): HeadersInit {
 // Базовая функция для запросов
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    ...getHeaders(),
+    ...options.headers
+  };
+  
+  console.log(`🌐 API запрос: ${options.method || 'GET'} ${url}`);
+  console.log('📋 Заголовки:', headers);
+  if (options.body) {
+    console.log('📦 Тело запроса:', options.body);
+  }
+  
   const response = await fetch(url, {
     ...options,
-    headers: {
-      ...getHeaders(),
-      ...options.headers
-    }
+    headers
   });
 
+  console.log(`📥 Ответ сервера: ${response.status} ${response.statusText}`);
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+    const errorText = await response.text();
+    console.error('❌ Ошибка ответа сервера:', errorText);
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { error: errorText || 'Ошибка сервера' };
+    }
     throw new Error(error.error || `HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('✅ Успешный ответ:', data);
+  return data;
 }
 
 // API для получателей

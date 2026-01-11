@@ -150,10 +150,15 @@ async function getUserFromRequest(req, res, next) {
     const firstName = req.headers['x-telegram-first-name'] || req.body.first_name;
     const lastName = req.headers['x-telegram-last-name'] || req.body.last_name;
     
+    console.log('🔍 Получение пользователя:', { telegramId, username, firstName, lastName });
+    console.log('📋 Заголовки запроса:', req.headers);
+    
     const user = await getOrCreateUser(telegramId, username, firstName, lastName);
+    console.log('✅ Пользователь найден/создан:', user);
     req.user = user;
     next();
   } catch (error) {
+    console.error('❌ Ошибка в getUserFromRequest:', error);
     next(error);
   }
 }
@@ -288,6 +293,10 @@ app.get('/api/orders/:id', getUserFromRequest, async (req, res) => {
 
 app.post('/api/orders', getUserFromRequest, async (req, res) => {
   try {
+    console.log('📥 POST /api/orders - Получен запрос');
+    console.log('👤 Пользователь:', req.user);
+    console.log('📦 Тело запроса:', req.body);
+    
     const {
       product_name, link, price, quantity, photo, warehouse_photo, comment,
       check_service, consolidation, remove_postal_packaging, remove_original_packaging,
@@ -307,7 +316,11 @@ app.post('/api/orders', getUserFromRequest, async (req, res) => {
       status || 'Ожидается на складе', status_date, track_number || `CN${Date.now()}`
     ]);
     
+    console.log('✅ Заказ создан в БД, ID:', result.lastID);
+    
     const order = await dbGet('SELECT * FROM orders WHERE id = ?', [result.lastID]);
+    console.log('📋 Созданный заказ:', order);
+    
     res.status(201).json({
       ...order,
       consolidation: Boolean(order.consolidation),
@@ -316,6 +329,7 @@ app.post('/api/orders', getUserFromRequest, async (req, res) => {
       photo_report: Boolean(order.photo_report)
     });
   } catch (error) {
+    console.error('❌ Ошибка при создании заказа:', error);
     res.status(500).json({ error: error.message });
   }
 });

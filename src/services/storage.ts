@@ -133,11 +133,18 @@ export const ordersStorage = {
     await checkAPI();
     if (useAPI) {
       try {
-        return await ordersAPI.create(data);
-      } catch (error) {
-        useAPI = false;
+        console.log('📤 Отправка заказа на API:', data);
+        const result = await ordersAPI.create(data);
+        console.log('✅ Заказ успешно создан в API:', result);
+        return result;
+      } catch (error: any) {
+        console.error('❌ Ошибка при создании заказа в API:', error);
+        console.error('Детали ошибки:', error.message);
+        // Не переключаемся на localStorage, выбрасываем ошибку
+        throw error;
       }
     }
+    console.warn('⚠️ API недоступен, сохраняем в localStorage');
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     const newOrder = {
       ...data,

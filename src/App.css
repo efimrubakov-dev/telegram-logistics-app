@@ -36,12 +36,15 @@ body {
   margin: 0 auto;
   background-color: var(--tg-theme-bg-color, #ffffff);
   width: 100%;
+  position: relative;
 }
 
 .main-content {
   flex: 1;
   padding: 70px var(--spacing) 80px;
   overflow-y: auto;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  min-height: calc(100vh - 150px);
 }
 
 /* РћР±С‰РёРµ СЃС‚РёР»Рё РґР»СЏ СЌРєСЂР°РЅРѕРІ */

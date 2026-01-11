@@ -38,15 +38,29 @@ function App() {
       tg.ready();
       tg.expand();
       
-      // Устанавливаем цвет фона из Telegram темы
+      // Устанавливаем цвет фона через Telegram API
       const bgColor = tg.themeParams?.bg_color || '#ffffff';
       const textColor = tg.themeParams?.text_color || '#000000';
+      
+      // Используем Telegram API для установки фона (важно для мобильных устройств)
+      if (tg.setBackgroundColor) {
+        // Убираем # из цвета для API
+        const bgColorHex = bgColor.replace('#', '');
+        tg.setBackgroundColor(bgColorHex);
+      }
       
       // Применяем цвета к документу
       document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
       document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
       document.body.style.backgroundColor = bgColor;
       document.body.style.color = textColor;
+      document.documentElement.style.backgroundColor = bgColor;
+      
+      // Устанавливаем фон для root элемента
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.backgroundColor = bgColor;
+      }
       
       // Получаем username из Telegram
       const user = tg.initDataUnsafe?.user;
@@ -57,6 +71,11 @@ function App() {
       // Если не в Telegram, устанавливаем дефолтные значения
       document.body.style.backgroundColor = '#ffffff';
       document.body.style.color = '#000000';
+      document.documentElement.style.backgroundColor = '#ffffff';
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.backgroundColor = '#ffffff';
+      }
     }
   }, []);
 

@@ -38,11 +38,25 @@ function App() {
       tg.ready();
       tg.expand();
       
+      // Устанавливаем цвет фона из Telegram темы
+      const bgColor = tg.themeParams?.bg_color || '#ffffff';
+      const textColor = tg.themeParams?.text_color || '#000000';
+      
+      // Применяем цвета к документу
+      document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
+      document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
+      document.body.style.backgroundColor = bgColor;
+      document.body.style.color = textColor;
+      
       // Получаем username из Telegram
       const user = tg.initDataUnsafe?.user;
       if (user?.username) {
         setTelegramUser(user.username);
       }
+    } else {
+      // Если не в Telegram, устанавливаем дефолтные значения
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#000000';
     }
   }, []);
 

@@ -22,9 +22,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--tg-theme-bg-color);
-  color: var(--tg-theme-text-color);
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
 .app {
@@ -33,7 +34,8 @@ body {
   min-height: 100vh;
   max-width: 600px;
   margin: 0 auto;
-  background-color: var(--tg-theme-bg-color);
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  width: 100%;
 }
 
 .main-content {

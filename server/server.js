@@ -25,10 +25,25 @@ const dbPath = join(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
 // Промис-обертки для sqlite3
-const dbRun = promisify(db.run.bind(db));
 const dbGet = promisify(db.get.bind(db));
 const dbAll = promisify(db.all.bind(db));
 const dbExec = promisify(db.exec.bind(db));
+
+// Специальная обертка для db.run, которая возвращает объект с lastID и changes
+function dbRun(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({
+          lastID: this.lastID,
+          changes: this.changes
+        });
+      }
+    });
+  });
+}
 
 // Создание таблиц
 (async () => {

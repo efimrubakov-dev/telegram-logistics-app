@@ -33,39 +33,60 @@ function App() {
 
   // Инициализация Telegram WebApp
   useEffect(() => {
-    // Всегда устанавливаем белый фон и черный текст для надежности
-    const bgColor = '#ffffff';
-    const textColor = '#000000';
-    
-    // Применяем цвета сразу
-    document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
-    document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
-    document.body.style.backgroundColor = bgColor;
-    document.body.style.color = textColor;
-    document.documentElement.style.backgroundColor = bgColor;
-    
-    const root = document.getElementById('root');
-    if (root) {
-      root.style.backgroundColor = bgColor;
-      root.style.color = textColor;
-    }
-    
-    // Инициализация Telegram WebApp
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
+    try {
+      // Всегда устанавливаем белый фон и черный текст для надежности
+      const bgColor = '#ffffff';
+      const textColor = '#000000';
       
-      // Устанавливаем белый фон через Telegram API
-      if (tg.setBackgroundColor) {
-        tg.setBackgroundColor('ffffff');
+      // Применяем цвета сразу
+      document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
+      document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
+      document.body.style.backgroundColor = bgColor;
+      document.body.style.color = textColor;
+      document.documentElement.style.backgroundColor = bgColor;
+      
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.backgroundColor = bgColor;
+        root.style.color = textColor;
       }
       
-      // Получаем username из Telegram
-      const user = tg.initDataUnsafe?.user;
-      if (user?.username) {
-        setTelegramUser(user.username);
+      // Инициализация Telegram WebApp (с обработкой ошибок)
+      try {
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg) {
+          if (typeof tg.ready === 'function') {
+            tg.ready();
+          }
+          if (typeof tg.expand === 'function') {
+            tg.expand();
+          }
+          
+          // Устанавливаем белый фон через Telegram API
+          if (typeof tg.setBackgroundColor === 'function') {
+            try {
+              tg.setBackgroundColor('ffffff');
+            } catch (e) {
+              console.warn('Не удалось установить цвет фона через Telegram API:', e);
+            }
+          }
+          
+          // Получаем username из Telegram
+          try {
+            const user = tg.initDataUnsafe?.user;
+            if (user?.username) {
+              setTelegramUser(user.username);
+            }
+          } catch (e) {
+            console.warn('Не удалось получить данные пользователя:', e);
+          }
+        }
+      } catch (telegramError) {
+        console.warn('Ошибка при инициализации Telegram WebApp:', telegramError);
+        // Продолжаем работу без Telegram API
       }
+    } catch (error) {
+      console.error('Критическая ошибка при инициализации:', error);
     }
   }, []);
 

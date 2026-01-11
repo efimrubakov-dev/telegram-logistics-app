@@ -444,6 +444,23 @@ app.delete('/api/consolidations/:id', getUserFromRequest, (req, res) => {
   res.json({ success: true });
 });
 
+// Корневой путь
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Telegram Logistics API',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      apiHealth: '/api/health',
+      recipients: '/api/recipients',
+      orders: '/api/orders',
+      deliveryAddresses: '/api/delivery-addresses',
+      consolidations: '/api/consolidations'
+    }
+  });
+});
+
 // Health check (добавляем также без префикса для проверки)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

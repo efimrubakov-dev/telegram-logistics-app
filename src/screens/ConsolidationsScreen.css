@@ -1,0 +1,5 @@
+﻿/* ConsolidationsScreen.css */
+.consolidations-screen {
+  display: flex;
+  flex-direction: column;
+}

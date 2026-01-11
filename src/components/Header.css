@@ -1,0 +1,98 @@
+﻿.header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: 56px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing);
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid #e1e3e6;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  height: 100%;
+  padding: 8px 0;
+}
+
+.logo-image {
+  height: 45px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-profile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+
+.header-profile-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.header-profile-btn:active {
+  transform: scale(0.95);
+}
+
+.profile-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.header-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+}
+
+.header-menu-btn span {
+  width: 26px;
+  height: 3px;
+  background-color: black;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+.header-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.header-menu-btn:hover span {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.header-menu-btn:active {
+  transform: scale(0.95);
+}

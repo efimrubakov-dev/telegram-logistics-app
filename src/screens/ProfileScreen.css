@@ -1,0 +1,11 @@
+﻿/* ProfileScreen.css */
+.profile-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

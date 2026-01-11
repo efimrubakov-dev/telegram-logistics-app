@@ -1,0 +1,33 @@
+.add-delivery-address-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.delivery-address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.delivery-address-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e1e3e6;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  transition: border-color 0.2s;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.delivery-address-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.delivery-address-form textarea::placeholder {
+  opacity: 0.5;
+  color: var(--tg-theme-hint-color);
+}

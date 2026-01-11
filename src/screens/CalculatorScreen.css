@@ -1,0 +1,73 @@
+﻿/* CalculatorScreen.css */
+.calculator-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.calculator-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.city-selector {
+  position: relative;
+}
+
+.city-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #e1e3e6;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.city-item {
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 15px;
+}
+
+.city-item:hover {
+  background-color: var(--tg-theme-secondary-bg-color);
+}
+
+.result-card {
+  margin-top: 24px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #3a6bb5 100%);
+  border-radius: var(--border-radius);
+  padding: 24px;
+  text-align: center;
+  color: white;
+  animation: slideInResult 0.4s ease;
+}
+
+.result-label {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.result-value {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+@keyframes slideInResult {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

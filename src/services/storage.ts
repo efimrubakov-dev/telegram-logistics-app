@@ -11,11 +11,15 @@ async function checkAPI() {
   if (apiChecked) return useAPI;
   
   try {
-    await healthCheck();
+    console.log('🔍 Проверка доступности API...');
+    const result = await healthCheck();
+    console.log('✅ Health check результат:', result);
     useAPI = true;
     console.log('✅ API доступен, используем backend');
-  } catch (error) {
+  } catch (error: any) {
     useAPI = false;
+    console.error('❌ API недоступен:', error);
+    console.error('Детали ошибки:', error.message);
     console.log('⚠️ API недоступен, используем localStorage');
   }
   

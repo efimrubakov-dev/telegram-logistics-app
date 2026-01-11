@@ -145,4 +145,30 @@ export const consolidationsAPI = {
 };
 
 // Проверка доступности API
-export const healthCheck = () => request<{ status: string; timestamp: string }>('/health');
+export const healthCheck = async () => {
+  try {
+    const url = `${API_BASE_URL}/health`;
+    console.log('🏥 Health check запрос:', url);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('🏥 Health check ответ:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Health check ошибка:', errorText);
+      throw new Error(`Health check failed: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Health check успешен:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Health check исключение:', error);
+    throw error;
+  }
+};

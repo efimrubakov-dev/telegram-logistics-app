@@ -1,14 +1,18 @@
 {
   "name": "telegram-logistics-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/update-version.js",
     "build": "vite build",
     "build:check": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "version:patch": "npm version patch && node scripts/update-version.js",
+    "version:minor": "npm version minor && node scripts/update-version.js",
+    "version:major": "npm version major && node scripts/update-version.js"
   },
   "dependencies": {
     "react": "^19.2.0",

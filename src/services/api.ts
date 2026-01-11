@@ -160,7 +160,7 @@ export const healthCheck = async () => {
   
   // Создаем AbortController для timeout (более совместимый способ)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд timeout (сервер на Render может спать)
   
   try {
     const response = await fetch(url, {

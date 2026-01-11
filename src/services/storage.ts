@@ -149,6 +149,8 @@ export const ordersStorage = {
 
   async create(data: any) {
     console.log('🔄 ordersStorage.create вызван');
+    // Всегда проверяем API заново перед созданием
+    apiChecked = false; // Сбрасываем флаг, чтобы проверить API заново
     const apiAvailable = await checkAPI();
     console.log('🔍 useAPI после checkAPI:', useAPI);
     console.log('🔍 apiAvailable:', apiAvailable);

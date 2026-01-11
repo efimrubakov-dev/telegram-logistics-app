@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { recipientsStorage } from '../services/storage';
 import './RecipientsScreen.css';
 
 interface Recipient {
@@ -25,17 +26,41 @@ interface RecipientsScreenProps {
 function RecipientsScreen({ onNavigate }: RecipientsScreenProps) {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
 
+  const loadRecipients = async () => {
+    try {
+      const storedRecipients = await recipientsStorage.getAll();
+      // Преобразуем формат данных из API в формат компонента
+      const formattedRecipients = storedRecipients.map((recipient: any) => ({
+        ...recipient,
+        id: recipient.id.toString(),
+        firstName: recipient.first_name || recipient.firstName,
+        lastName: recipient.last_name || recipient.lastName,
+        middleName: recipient.middle_name || recipient.middleName,
+        birthDate: recipient.birth_date || recipient.birthDate,
+        passportSeries: recipient.passport_series || recipient.passportSeries,
+        passportNumber: recipient.passport_number || recipient.passportNumber,
+        passportIssueDate: recipient.passport_issue_date || recipient.passportIssueDate
+      }));
+      setRecipients(formattedRecipients);
+    } catch (error) {
+      console.error('Ошибка загрузки получателей:', error);
+      setRecipients([]);
+    }
+  };
+
   useEffect(() => {
-    // Загружаем получателей из localStorage
-    const storedRecipients = JSON.parse(localStorage.getItem('recipients') || '[]');
-    setRecipients(storedRecipients);
+    loadRecipients();
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Вы уверены, что хотите удалить этого получателя?')) {
-      const updatedRecipients = recipients.filter(r => r.id !== id);
-      setRecipients(updatedRecipients);
-      localStorage.setItem('recipients', JSON.stringify(updatedRecipients));
+      try {
+        await recipientsStorage.delete(id);
+        await loadRecipients(); // Перезагружаем список
+      } catch (error) {
+        console.error('Ошибка удаления получателя:', error);
+        alert('Ошибка при удалении получателя');
+      }
     }
   };
 

@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { ordersStorage } from '../services/storage';
 import './OrdersScreen.css';
 
 interface Order {
@@ -32,9 +33,26 @@ function OrdersScreen({ onNavigate }: OrdersScreenProps) {
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
 
-  const loadOrders = () => {
-    const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    setOrders(storedOrders);
+  const loadOrders = async () => {
+    try {
+      const storedOrders = await ordersStorage.getAll();
+      // Преобразуем формат данных из API в формат компонента
+      const formattedOrders = storedOrders.map((order: any) => ({
+        ...order,
+        id: order.id.toString(),
+        productName: order.product_name || order.productName,
+        consolidation: Boolean(order.consolidation),
+        removePostalPackaging: Boolean(order.remove_postal_packaging),
+        removeOriginalPackaging: Boolean(order.remove_original_packaging),
+        photoReport: Boolean(order.photo_report),
+        trackNumber: order.track_number || order.trackNumber,
+        statusDate: order.status_date || order.statusDate
+      }));
+      setOrders(formattedOrders);
+    } catch (error) {
+      console.error('Ошибка загрузки заказов:', error);
+      setOrders([]);
+    }
   };
 
   useEffect(() => {
@@ -82,13 +100,18 @@ function OrdersScreen({ onNavigate }: OrdersScreenProps) {
     setSelectedOrders(newSelected);
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedOrders.size === 0) return;
     if (window.confirm(`Вы уверены, что хотите удалить ${selectedOrders.size} товар(ов)?`)) {
-      const updatedOrders = orders.filter(order => !selectedOrders.has(order.id));
-      setOrders(updatedOrders);
-      localStorage.setItem('orders', JSON.stringify(updatedOrders));
-      setSelectedOrders(new Set());
+      try {
+        const idsToDelete = Array.from(selectedOrders);
+        await ordersStorage.deleteMany(idsToDelete);
+        await loadOrders(); // Перезагружаем список
+        setSelectedOrders(new Set());
+      } catch (error) {
+        console.error('Ошибка удаления заказов:', error);
+        alert('Ошибка при удалении заказов');
+      }
     }
   };
 
@@ -251,14 +274,18 @@ function OrdersScreen({ onNavigate }: OrdersScreenProps) {
                 <div className="order-actions-bar">
                   <button
                     className="order-action-btn delete-action-btn"
-                    onClick={() => {
+                    onClick={async () => {
                       if (window.confirm('Вы уверены, что хотите удалить этот товар?')) {
-                        const updatedOrders = orders.filter(o => o.id !== order.id);
-                        setOrders(updatedOrders);
-                        localStorage.setItem('orders', JSON.stringify(updatedOrders));
-                        const newSelected = new Set(selectedOrders);
-                        newSelected.delete(order.id);
-                        setSelectedOrders(newSelected);
+                        try {
+                          await ordersStorage.delete(order.id);
+                          await loadOrders(); // Перезагружаем список
+                          const newSelected = new Set(selectedOrders);
+                          newSelected.delete(order.id);
+                          setSelectedOrders(newSelected);
+                        } catch (error) {
+                          console.error('Ошибка удаления заказа:', error);
+                          alert('Ошибка при удалении заказа');
+                        }
                       }
                     }}
                   >

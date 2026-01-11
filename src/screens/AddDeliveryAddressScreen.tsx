@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { deliveryAddressesStorage } from '../services/storage';
 import './AddDeliveryAddressScreen.css';
 
 interface AddDeliveryAddressScreenProps {
@@ -23,59 +24,54 @@ function AddDeliveryAddressScreen({ onNavigate }: AddDeliveryAddressScreenProps)
   const deliveryCompanies = ['CDEK', 'Почта России', 'DPD', 'BUS Курьер'];
 
   useEffect(() => {
-    const editingAddressId = localStorage.getItem('editingDeliveryAddressId');
-    if (editingAddressId) {
-      setEditingId(editingAddressId);
-      const addresses = JSON.parse(localStorage.getItem('deliveryAddresses') || '[]');
-      const addressData = addresses.find((a: DeliveryAddress) => a.id === editingAddressId);
-      
-      if (addressData) {
-        setAddressName(addressData.name || '');
-        setCompany(addressData.company || '');
-        setAddress(addressData.address || '');
+    const loadEditingAddress = async () => {
+      const editingAddressId = localStorage.getItem('editingDeliveryAddressId');
+      if (editingAddressId) {
+        setEditingId(editingAddressId);
+        try {
+          const addressData = await deliveryAddressesStorage.getById(editingAddressId);
+          if (addressData) {
+            setAddressName(addressData.name || '');
+            setCompany(addressData.company || '');
+            setAddress(addressData.address || '');
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки адреса:', error);
+        }
+      } else {
+        setEditingId(null);
+        setAddressName('');
+        setCompany('');
+        setAddress('');
       }
-    } else {
-      setEditingId(null);
-      setAddressName('');
-      setCompany('');
-      setAddress('');
-    }
+    };
+    loadEditingAddress();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const addresses: DeliveryAddress[] = JSON.parse(localStorage.getItem('deliveryAddresses') || '[]');
-    
-    if (editingId) {
-      // Обновляем существующий адрес
-      const updatedAddresses = addresses.map((a) => 
-        a.id === editingId 
-          ? {
-              ...a,
-              name: addressName,
-              company,
-              address
-            }
-          : a
-      );
-      localStorage.setItem('deliveryAddresses', JSON.stringify(updatedAddresses));
-      localStorage.removeItem('editingDeliveryAddressId');
-    } else {
-      // Создаем новый адрес
-      const newAddress: DeliveryAddress = {
-        id: Date.now().toString(),
+    try {
+      const addressData = {
         name: addressName,
         company,
-        address,
-        createdAt: new Date().toISOString()
+        address
       };
+
+      if (editingId) {
+        // Обновляем существующий адрес
+        await deliveryAddressesStorage.update(editingId, addressData);
+        localStorage.removeItem('editingDeliveryAddressId');
+      } else {
+        // Создаем новый адрес
+        await deliveryAddressesStorage.create(addressData);
+      }
       
-      addresses.push(newAddress);
-      localStorage.setItem('deliveryAddresses', JSON.stringify(addresses));
+      onNavigate('delivery-address');
+    } catch (error) {
+      console.error('Ошибка сохранения адреса:', error);
+      alert('Ошибка при сохранении адреса. Попробуйте еще раз.');
     }
-    
-    onNavigate('delivery-address');
   };
 
   return (

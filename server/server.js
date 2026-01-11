@@ -355,41 +355,73 @@ app.delete('/api/orders', getUserFromRequest, (req, res) => {
 });
 
 // ==================== DELIVERY ADDRESSES ====================
-app.get('/api/delivery-addresses', getUserFromRequest, (req, res) => {
-  const addresses = db.prepare('SELECT * FROM delivery_addresses WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
-  res.json(addresses);
-});
-
-app.post('/api/delivery-addresses', getUserFromRequest, (req, res) => {
-  const { name, company, address } = req.body;
-  
-  const insert = db.prepare('INSERT INTO delivery_addresses (user_id, name, company, address) VALUES (?, ?, ?, ?)');
-  const result = insert.run(req.user.id, name, company, address);
-  
-  const deliveryAddress = db.prepare('SELECT * FROM delivery_addresses WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(deliveryAddress);
-});
-
-app.put('/api/delivery-addresses/:id', getUserFromRequest, (req, res) => {
-  const { name, company, address } = req.body;
-  
-  const update = db.prepare('UPDATE delivery_addresses SET name = ?, company = ?, address = ? WHERE id = ? AND user_id = ?');
-  const result = update.run(name, company, address, req.params.id, req.user.id);
-  
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Адрес не найден' });
+app.get('/api/delivery-addresses', getUserFromRequest, async (req, res) => {
+  try {
+    const addresses = await dbAll('SELECT * FROM delivery_addresses WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
+    res.json(addresses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  
-  const deliveryAddress = db.prepare('SELECT * FROM delivery_addresses WHERE id = ?').get(req.params.id);
-  res.json(deliveryAddress);
 });
 
-app.delete('/api/delivery-addresses/:id', getUserFromRequest, (req, res) => {
-  const result = db.prepare('DELETE FROM delivery_addresses WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
-  if (result.changes === 0) {
-    return res.status(404).json({ error: 'Адрес не найден' });
+app.get('/api/delivery-addresses/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const address = await dbGet('SELECT * FROM delivery_addresses WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (!address) {
+      return res.status(404).json({ error: 'Адрес не найден' });
+    }
+    res.json(address);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json({ success: true });
+});
+
+app.post('/api/delivery-addresses', getUserFromRequest, async (req, res) => {
+  try {
+    const { name, company, address } = req.body;
+    
+    const result = await dbRun(
+      'INSERT INTO delivery_addresses (user_id, name, company, address) VALUES (?, ?, ?, ?)',
+      [req.user.id, name, company, address]
+    );
+    
+    const deliveryAddress = await dbGet('SELECT * FROM delivery_addresses WHERE id = ?', [result.lastID]);
+    res.status(201).json(deliveryAddress);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/delivery-addresses/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const { name, company, address } = req.body;
+    
+    const result = await dbRun(
+      'UPDATE delivery_addresses SET name = ?, company = ?, address = ? WHERE id = ? AND user_id = ?',
+      [name, company, address, req.params.id, req.user.id]
+    );
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Адрес не найден' });
+    }
+    
+    const deliveryAddress = await dbGet('SELECT * FROM delivery_addresses WHERE id = ?', [req.params.id]);
+    res.json(deliveryAddress);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/delivery-addresses/:id', getUserFromRequest, async (req, res) => {
+  try {
+    const result = await dbRun('DELETE FROM delivery_addresses WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Адрес не найден' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ==================== CONSOLIDATIONS ====================

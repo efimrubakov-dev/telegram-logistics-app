@@ -1,5 +1,6 @@
 ﻿import { useState, useRef, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { ordersStorage } from '../services/storage';
 import './CreateOrderScreen.css';
 
 interface CreateOrderScreenProps {
@@ -46,39 +47,44 @@ function CreateOrderScreen({ onNavigate }: CreateOrderScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const editingOrderId = localStorage.getItem('editingOrderId');
-    if (editingOrderId) {
-      setEditingId(editingOrderId);
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const order = orders.find((o: Order) => o.id === editingOrderId);
-      
-      if (order) {
-        setProductName(order.productName || '');
-        setLink(order.link || '');
-        setPrice(order.price?.toString() || '');
-        setQuantity(order.quantity?.toString() || '');
-        setPhotoPreview(order.photo);
-        setComment(order.comment || '');
-        setCheckService(order.checkService as 'with-check' | 'without-check' || '');
-        setConsolidation(order.consolidation ?? true);
-        setRemovePostalPackaging(order.removePostalPackaging || false);
-        setRemoveOriginalPackaging(order.removeOriginalPackaging || false);
-        setPhotoReport(order.photoReport || false);
+    const loadEditingOrder = async () => {
+      const editingOrderId = localStorage.getItem('editingOrderId');
+      if (editingOrderId) {
+        setEditingId(editingOrderId);
+        try {
+          const order = await ordersStorage.getById(editingOrderId);
+          if (order) {
+            setProductName(order.product_name || order.productName || '');
+            setLink(order.link || '');
+            setPrice(order.price?.toString() || '');
+            setQuantity(order.quantity?.toString() || '');
+            setPhotoPreview(order.photo);
+            setComment(order.comment || '');
+            setCheckService((order.check_service || order.checkService) as 'with-check' | 'without-check' || '');
+            setConsolidation(order.consolidation ?? true);
+            setRemovePostalPackaging(order.remove_postal_packaging || order.removePostalPackaging || false);
+            setRemoveOriginalPackaging(order.remove_original_packaging || order.removeOriginalPackaging || false);
+            setPhotoReport(order.photo_report || order.photoReport || false);
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки заказа:', error);
+        }
+      } else {
+        setEditingId(null);
+        setProductName('');
+        setLink('');
+        setPrice('');
+        setQuantity('');
+        setPhotoPreview(null);
+        setComment('');
+        setCheckService('');
+        setConsolidation(true);
+        setRemovePostalPackaging(false);
+        setRemoveOriginalPackaging(false);
+        setPhotoReport(false);
       }
-    } else {
-      setEditingId(null);
-      setProductName('');
-      setLink('');
-      setPrice('');
-      setQuantity('');
-      setPhotoPreview(null);
-      setComment('');
-      setCheckService('');
-      setConsolidation(true);
-      setRemovePostalPackaging(false);
-      setRemoveOriginalPackaging(false);
-      setPhotoReport(false);
-    }
+    };
+    loadEditingOrder();
   }, []);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,60 +99,42 @@ function CreateOrderScreen({ onNavigate }: CreateOrderScreenProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-    
-    if (editingId) {
-      // Обновляем существующий товар
-      const updatedOrders = existingOrders.map((o) => 
-        o.id === editingId 
-          ? {
-              ...o,
-              productName,
-              link,
-              price: parseFloat(price),
-              quantity: parseInt(quantity),
-              photo: photoPreview || o.photo,
-              comment,
-              checkService,
-              consolidation,
-              removePostalPackaging,
-              removeOriginalPackaging,
-              photoReport
-            }
-          : o
-      );
-      localStorage.setItem('orders', JSON.stringify(updatedOrders));
-      localStorage.removeItem('editingOrderId');
-    } else {
-      // Создаем новый товар
-      const order: Order = {
-        id: Date.now().toString(),
-        productName,
+    try {
+      const orderData = {
+        product_name: productName,
         link,
         price: parseFloat(price),
-        quantity: parseInt(quantity),
+        quantity: parseInt(quantity) || 1,
         photo: photoPreview,
-        warehousePhoto: null,
+        warehouse_photo: null,
         comment,
-        checkService,
+        check_service: checkService,
         consolidation,
-        removePostalPackaging,
-        removeOriginalPackaging,
-        photoReport,
+        remove_postal_packaging: removePostalPackaging,
+        remove_original_packaging: removeOriginalPackaging,
+        photo_report: photoReport,
         status: 'Ожидается на складе',
-        statusDate: new Date().toLocaleDateString('ru-RU'),
-        trackNumber: `CN${Date.now()}`,
-        createdAt: new Date().toISOString()
+        status_date: new Date().toLocaleDateString('ru-RU'),
+        track_number: `CN${Date.now()}`
       };
+
+      if (editingId) {
+        // Обновляем существующий товар
+        await ordersStorage.update(editingId, orderData);
+        localStorage.removeItem('editingOrderId');
+      } else {
+        // Создаем новый товар
+        await ordersStorage.create(orderData);
+      }
       
-      existingOrders.push(order);
-      localStorage.setItem('orders', JSON.stringify(existingOrders));
+      onNavigate('orders');
+    } catch (error) {
+      console.error('Ошибка сохранения заказа:', error);
+      alert('Ошибка при сохранении заказа. Попробуйте еще раз.');
     }
-    
-    onNavigate('orders');
   };
 
   return (

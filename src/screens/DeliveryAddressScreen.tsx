@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { deliveryAddressesStorage } from '../services/storage';
 import './DeliveryAddressScreen.css';
 
 interface DeliveryAddressScreenProps {
@@ -17,19 +18,34 @@ interface DeliveryAddress {
 function DeliveryAddressScreen({ onNavigate }: DeliveryAddressScreenProps) {
   const [deliveryAddresses, setDeliveryAddresses] = useState<DeliveryAddress[]>([]);
 
+  const loadAddresses = async () => {
+    try {
+      const addresses = await deliveryAddressesStorage.getAll();
+      // Преобразуем формат данных из API в формат компонента
+      const formattedAddresses = addresses.map((address: any) => ({
+        ...address,
+        id: address.id.toString()
+      }));
+      setDeliveryAddresses(formattedAddresses);
+    } catch (error) {
+      console.error('Ошибка загрузки адресов:', error);
+      setDeliveryAddresses([]);
+    }
+  };
+
   useEffect(() => {
-    const loadAddresses = () => {
-      const addresses = JSON.parse(localStorage.getItem('deliveryAddresses') || '[]');
-      setDeliveryAddresses(addresses);
-    };
     loadAddresses();
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Вы уверены, что хотите удалить этот адрес?')) {
-      const updatedAddresses = deliveryAddresses.filter(a => a.id !== id);
-      setDeliveryAddresses(updatedAddresses);
-      localStorage.setItem('deliveryAddresses', JSON.stringify(updatedAddresses));
+      try {
+        await deliveryAddressesStorage.delete(id);
+        await loadAddresses(); // Перезагружаем список
+      } catch (error) {
+        console.error('Ошибка удаления адреса:', error);
+        alert('Ошибка при удалении адреса');
+      }
     }
   };
 

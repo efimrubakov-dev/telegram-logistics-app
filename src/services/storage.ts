@@ -210,6 +210,19 @@ export const deliveryAddressesStorage = {
     return JSON.parse(localStorage.getItem('deliveryAddresses') || '[]');
   },
 
+  async getById(id: string) {
+    await checkAPI();
+    if (useAPI) {
+      try {
+        return await deliveryAddressesAPI.getById(id);
+      } catch (error) {
+        useAPI = false;
+      }
+    }
+    const addresses = JSON.parse(localStorage.getItem('deliveryAddresses') || '[]');
+    return addresses.find((a: any) => a.id === id);
+  },
+
   async create(data: any) {
     await checkAPI();
     if (useAPI) {

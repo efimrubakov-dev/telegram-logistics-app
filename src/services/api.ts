@@ -95,6 +95,7 @@ export const ordersAPI = {
 // API для адресов доставки
 export const deliveryAddressesAPI = {
   getAll: () => request<any[]>('/delivery-addresses'),
+  getById: (id: string) => request<any>(`/delivery-addresses/${id}`),
   create: (data: any) => request<any>('/delivery-addresses', {
     method: 'POST',
     body: JSON.stringify(data)

@@ -1,5 +1,6 @@
 ﻿import { useState, useRef, useEffect } from 'react';
 import type { ScreenType } from '../types';
+import { recipientsStorage } from '../services/storage';
 import './CreateRecipientScreen.css';
 
 interface CreateRecipientScreenProps {
@@ -41,40 +42,45 @@ function CreateRecipientScreen({ onNavigate }: CreateRecipientScreenProps) {
 
   // Загружаем данные получателя при редактировании
   useEffect(() => {
-    const editingRecipientId = localStorage.getItem('editingRecipientId');
-    if (editingRecipientId) {
-      setEditingId(editingRecipientId);
-      const recipients = JSON.parse(localStorage.getItem('recipients') || '[]');
-      const recipient = recipients.find((r: Recipient) => r.id === editingRecipientId);
-      
-      if (recipient) {
-        setRecipientName(recipient.name || '');
-        setFirstName(recipient.firstName || '');
-        setLastName(recipient.lastName || '');
-        setMiddleName(recipient.middleName || '');
-        setEmail(recipient.email || '');
-        setPhone(recipient.phone || '+7');
-        setBirthDate(recipient.birthDate || '');
-        setPassportSeries(recipient.passportSeries || '');
-        setPassportNumber(recipient.passportNumber || '');
-        setPassportIssueDate(recipient.passportIssueDate || '');
-        setInn(recipient.inn || '');
+    const loadEditingRecipient = async () => {
+      const editingRecipientId = localStorage.getItem('editingRecipientId');
+      if (editingRecipientId) {
+        setEditingId(editingRecipientId);
+        try {
+          const recipient = await recipientsStorage.getById(editingRecipientId);
+          if (recipient) {
+            setRecipientName(recipient.name || '');
+            setFirstName(recipient.first_name || recipient.firstName || '');
+            setLastName(recipient.last_name || recipient.lastName || '');
+            setMiddleName(recipient.middle_name || recipient.middleName || '');
+            setEmail(recipient.email || '');
+            setPhone(recipient.phone || '+7');
+            setBirthDate(recipient.birth_date || recipient.birthDate || '');
+            setPassportSeries(recipient.passport_series || recipient.passportSeries || '');
+            setPassportNumber(recipient.passport_number || recipient.passportNumber || '');
+            setPassportIssueDate(recipient.passport_issue_date || recipient.passportIssueDate || '');
+            setInn(recipient.inn || '');
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки получателя:', error);
+        }
+      } else {
+        // Очищаем форму при создании нового
+        setEditingId(null);
+        setRecipientName('');
+        setFirstName('');
+        setLastName('');
+        setMiddleName('');
+        setEmail('');
+        setPhone('+7');
+        setBirthDate('');
+        setPassportSeries('');
+        setPassportNumber('');
+        setPassportIssueDate('');
+        setInn('');
       }
-    } else {
-      // Очищаем форму при создании нового
-      setEditingId(null);
-      setRecipientName('');
-      setFirstName('');
-      setLastName('');
-      setMiddleName('');
-      setEmail('');
-      setPhone('+7');
-      setBirthDate('');
-      setPassportSeries('');
-      setPassportNumber('');
-      setPassportIssueDate('');
-      setInn('');
-    }
+    };
+    loadEditingRecipient();
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
